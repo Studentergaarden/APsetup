@@ -2,6 +2,7 @@
 Scripts til at flashe og sætte TP-link WDR4300 og ArcherC7 access points op med
 openwrt.
 
+Disse filer ligger også serveren, i mappen =/root/scrips/ap_setup=.
 * Brug
 Læs først sektionen om hvordan AP'et flashes med openWRT herunder. I det
 følgende antages du har et ny-flashed AP.
