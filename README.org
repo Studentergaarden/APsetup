@@ -1,0 +1,200 @@
+* Intro
+Scripts til at flashe og sætte TP-link WDR4300 og ArcherC7 access points op med
+openwrt.
+
+* Brug
+Læs først sektionen om hvordan AP'et flashes med openWRT herunder. I det
+følgende antages du har et ny-flashed AP.
+
+Alt efter hvilket AP der skal konfigureres, bruges enten =archerc7= eller
+=wdr4300=. =config.py= genererer config-filer og gemmer dem i =template=
+mappen. Sæt ip, gang-vlan, og frekvens før den køres i =config.py= , hvis
+nødvendig.
+
+Herefter skal du sætte/ændre =ROOT2_PASSWORD= i =set_password.sh=. Det bliver
+root-password'et der bruges når der logges ind via web-interfacet. Kopier også
+SG serverens nøglefil(=/etc/.ssh/id_rsa_loki=) over i mappen. Den bruges til at
+logge ind på APet uden password. Hvis det ønskes, kan det ændres i
+=switch_config.sh= så den bruger password i stedet.
+
+Kør =set_password.sh=, scriptet logger ind på APet og sætter root-password via
+telnet.
+Kør derefter =switch_config.sh IP=, hvor IP skal svare til en af de filer der
+blev genereret med =config.py=.
+
+APet bør nu være klar til brug.
+God fornøjelse.
+
+* Flash af AP
+Kopieret fra wiki-artiklen på vvv/.
+
+Denne side indeholder information om hvordan access points sættes op til at
+virke på SGs net.  Læs også siden om [[IPnumre]] og opdater den hvis du laver
+ændringer i ip-adresserne. Det er vigtigt at holde listen over ip-adresser
+opdateret.
+** Nettet kort
+
+Vi får fibernet leveret af forskernettet. Det kommer ind i serverrummet hvor det
+går ind i en splitter med ethernet udtag. Se [[Fsknet]] for linjeføringen af
+fiberkablet.
+
+Fra splitteren går det ind i serveren, tagges med relevante VLANS og sendes
+videre til switchen. Ud fra VLAN tagget, sender switchen trafikken videre til de
+relevante gange. Hver gang sidder altså på sin egen specifikke port i switchen,
+baseret på dets VLAN. Se [[IPnumre#VLANS]] for en oversigt.
+
+** Beskrivelse af AP
+
+Hvert AP modtager fire taggede VLANS: <code>adm-vlan, gang-vlan, priv-vlan,
+free-vlan.</<code> Det er kun <code>gang-vlan</code> der er forskelligt for de
+enkelte access points.
+
+Ved opsætning af et AP skal det således kunne modtage sin IP fra
+<code>adm-vlan</code>, sende trafikken fra <code>gang-vlan</code> utagget videre
+ud til alle værelserne via det kablede net og bruge <code>priv-vlan</code> og
+</code>free-vlan</code> til det trådløse net.
+
+Derudover skal APet kunne bruge flere SSID per kanal, så den både sender
+<code>Octavis</code> og <code>OctaviusFree</code> ud på 2.4GHz (og tilsvarende
+for 5GHz.
+
+Det kan lade sig gøre med [http://www.dd-wrt.com/ dd-wrt] og
+[https://openwrt.org openwrt], så sørg for at købe APs der er understøttet af én
+disse styresystemer.
+
+** Opsætning af AP
+
+Arresøgadefløjen bruger [https://wiki.openwrt.org/toh/tp-link/tl-wdr4300 TP link N750]
+mens resten af gården bruger
+[https://wiki.openwrt.org/toh/tp-link/archer-c5-c7-wdr7500 TP link AC1750](Archer C7 ver 2.0).
+
+Begge har installeret <code>openwrt</code>, da det muliggør flashing og
+konfiguration fra kommandolinjen - uden brug af en GUI.
+Fra serveren er det muligt at logge på de enkelte APs med(skift 26 ud med
+relevante IP):
+ ssh -i /root/.ssh/id_rsa root@10.42.40.26
+
+eller tilgå dem via http:
+ http://10.42.0.26/
+
+** Flashing
+
+Access points'ne flashes via TFTP.
+
+Det gøres ved at:
+- sætte en TFTP-server på på din computer
+- downloade en firmware til APet
+- Omdøb og placer firmwaren i en mappe TFTP-serveren kan finde
+- ændre computeres IP til den IP APet lytter efter en TFTP server på
+- Forbinde computeren og APet med et netkabel. Brug port 1 i APet.
+- Hold power-knappen på APet nede og tilslut strøm.
+
+For at se om alt forløber som det skal, er de det en god idé at starte et
+program i baggrunden der kan vise trafikken på netværket. På den måde kan du se
+om APet kan finde firmwaren, om computeren har den IP APet forventer, mv.
+
+*** Archer C7
+
+Download seneste trunk eller stable build(alt efter temperament) fra
+[https://downloads.openwrt.org/snapshots/trunk/ar71xx/generic/openwrt-ar71xx-generic-archer-c7-v2-squashfs-factory.bin trunk]
+[https://downloads.openwrt.org/chaos_calmer/15.05/ar71xx/generic/openwrt-15.05-ar71xx-generic-archer-c7-v2-squashfs-factory.bin stable]
+
+Ved trunk skal du installere <code>kmod-ath10k</code> and <code>luci</code>
+manuelt bagefter. <code>kmod-ath10k</code> er driver til det trådløse net og
+<code>luci</code> er GUI/web-interface.
+
+For at bruge WPA2 Enterprise wifi auth(skal bruges til radius server), skal
+<code>wpad</code> bruges. Som standard er <code>wpad_mini</code> installeret.
+[https://downloads.openwrt.org/chaos_calmer/15.05/ar71xx/generic/packages/base/wpad_2015-03-25-1_ar71xx.ipk wpad.ipk]
+
+#+BEGIN_SRC quote
+https://wiki.openwrt.org/toh/tp-link/tl-wdr7500#tftp_recovery_de-bricking For
+firmware revisions before 3.14.1 (140929), the router looks for an IP address of
+192.168.1.66 and a file named ArcherC7v2_tp_recovery.bin. Firmware 3.14.1
+updates the bootloader to look for an IP address of 192.168.0.66 and a file
+named ArcherC7v3_tp_recovery.bin even on hardware v2 units. Some v1.1 units may
+also look for ArcherC7v1_tp_recovery.bin. The model Archer C5 looks for the file
+ArcherC5v1_tp_recovery.bin.
+#+END_SRC
+
+
+Altså, alt efter hvilken firmware der ligger på APet, forventer den et
+forskelligt filnavn.
+Kopier filen til mappen hvor tfft-serveren serverer filer fra, og omdøb filen
+ cp openwrt-ar71xx-generic-archer-c7-v2-squashfs-factory.bin /srv/tftp/ArcherC7v2_tp_recovery.bin
+
+
+*** WDR4300
+
+ cp openwrt-15.05-ar71xx-generic-tl-wdr4300-v1-squashfs-factory.bin /srv/tftp/wdr4300v1_tp_recovery.bin
+
+*** Setup TFTP server
+
+Løst kopieret fra https://forum.openwrt.org/viewtopic.php?id=56570
+guide til Debian og Ubuntu.
+#+BEGIN_SRC sh
+# become root
+sudo su -
+
+# install TFTP
+aptitude install tftp tftpd-hpa
+
+# stop daemon and run from commandline
+/etc/init.d/tftpd-hpa stop
+in.tftpd --foreground -vvvvv -s --user root /srv/tftp/
+
+## in an another terminal (also as root):
+# kopier firmware til /srv/tftp/
+cp openwrt-15.05-ar71xx-generic-tl-wdr4300-v1-squashfs-factory.bin /srv/tftp/wdr4300v1_tp_recovery.bin
+
+# test
+tftp
+tftp> connect localhost 69
+tftp> get wdr4300v1_tp_recovery.bin
+Received 8152751 bytes in 0.2 seconds
+
+## connect to computer to AP Ethernet Port 1
+# router has 192.168.0.86 and looks for 192.168.0.66
+ifconfig -v eth0 192.168.0.66 netmask 255.255.255.0
+
+# watch
+tcpdump -vv -i eth0
+
+# power on router while pressing WPS/Reset button for 5 second
+
+#+END_SRC
+
+
+Access point'et er nu flashed med openwrt og den bør svare på enten
+<code>192.168.1.1</code> eller <code>192.168.0.1</code>. Nu skal netværket
+sættes op, før den kan bruges.
+
+** Konfiguration
+
+Bemærk at hvor netværket på computeren ved flashing(TFTP) er sat til
+<code>ifconfig -v eth0 192.168.0.66 netmask 255.255.255.0</code>, har APet efter
+flash som standard IP <code>192.168.1.1/24</code>. Dvs computerens IP skal
+f.eks.  sættes til <code>ifconfig -v eth0 192.168.1.66 netmask
+255.255.255.0</code>
+
+Følgende skal gøres
+
+- Sæt root2 password. OBS: '''Telnet was removed from trunk by 46809.''',
+  dvs. builds udgivet efter Chaos Calmer 15.05.
+- kopiere offentlig nøgle fra serveren over i
+  <code>/etc/dropbear/authorized_keys</code> på APet
+- Installer <code>wpad</code>. Det er en ipk fil(installationsfil/driver) der
+  skal bruges for at bruge WPA2 Enterprise wifi auth(skal bruges til radius
+  server). Som standard er <code>wpad_mini</code> installeret.
+- Opsæt netværk og wireless
+- Genstart AP
+- Installer AP på gangen: isæt '''kabel fra BitCave i port 0'''(wan-port), Andre
+  konfigureret APs tilsluttes port 1 eller port 4. Port 2 og 3 er utaggede og
+  bruges til den switch der fordeler netværk til værelserne og andet udstyr der
+  monteres direkte.
+- Drik dig fuld, du har nu fuldført level 99 og er AP master.
+
+Husk at notere APets mac-adresse og tilføj den til
+=/etc/dhcp/dhcpd.conf= på serveren.
+
+Jeg har lavet nogle scripts der automatiserer ovenstående.
