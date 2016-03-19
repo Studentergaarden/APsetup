@@ -25,6 +25,11 @@ blev genereret med =config.py=.
 APet bør nu være klar til brug.
 God fornøjelse.
 
+* server
+Server-mappen indeholder nogle scripts til at generere nødvendige filer til
+dhcp-serveren, firewall(nftable) og netværket(system.d-network). Det bør ikke
+være nødvendigt at bruge denne mappe, hvis du blot skal opsætte nogle få AP. 
+
 * Flash af AP
 Kopieret fra wiki-artiklen på vvv/.
 
