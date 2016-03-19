@@ -4,13 +4,14 @@
 # sudo apt-get install sshpass expect
 
 ip=$1
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ -n "$ip" ]]; then
 	rm -f etc/config/network
 	rm -f etc/config/wireless
 	rm -f etc/config/system
-	ln -s template/${ip}_network etc/config/network
-	ln -s template/${ip}_wireless etc/config/wireless
-	ln -s template/${ip}_system etc/config/system
+	ln -s $DIR/template/${ip}_network etc/config/network
+	ln -s $DIR/template/${ip}_wireless etc/config/wireless
+	ln -s $DIR/template/${ip}_system etc/config/system
 else
 	echo "argument error. Husk at give ip"
 	exit 0
