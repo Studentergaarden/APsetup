@@ -9,14 +9,14 @@ følgende antages du har et ny-flashed AP.
 
 Alt efter hvilket AP der skal konfigureres, bruges enten =archerc7= eller
 =wdr4300=. =config.py= genererer config-filer og gemmer dem i =template=
-mappen. Sæt ip, gang-vlan, og frekvens før den køres i =config.py= , hvis
-nødvendig.
+mappen. Sæt ip, gang-vlan, og frekvens før =config.py= køres, hvis nødvendig.
 
 Herefter skal du sætte/ændre =ROOT2_PASSWORD= i =set_password.sh=. Det bliver
 root-password'et der bruges når der logges ind via web-interfacet. Kopier også
 SG serverens nøglefil(=/etc/.ssh/id_rsa_loki=) over i mappen. Den bruges til at
-logge ind på APet uden password. Hvis det ønskes, kan det ændres i
-=switch_config.sh= så den bruger password i stedet.
+logge ind på APet uden password. Hvis det ønskes, kan du undlade at kopiere
+nøglefilen ind i mappen; du vil så i stedet manuelt skulle indtaste
+ROOT2-passwordet når =switch_config.sh= køres.
 
 Kør =set_password.sh=, scriptet logger ind på APet og sætter root-password via
 telnet.
